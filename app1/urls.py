@@ -1367,5 +1367,11 @@ urlpatterns = [
     path('purchaseOrderDetailsToEmail',views.purchaseOrderDetailsToEmail,name="purchaseOrderDetailsToEmail"),
     
     path('debit_add_file/<int:id>/', views.debit_add_file, name='debit_add_file'),
+
+
+
+    #akshaya
+    path('shareholidaysToEmail/<int:year>/<str:month>/',views.shareholidaysToEmail,name="shareholidaysToEmail"),
+    
  
 ]

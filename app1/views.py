@@ -54,6 +54,9 @@ from django.core.mail import EmailMessage
 from django.db import transaction
 from django.db import IntegrityError
 
+from django.core.mail import send_mail, EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 def index(request):
     return render(request, 'app1/index.html')
@@ -47564,23 +47567,34 @@ def holidayss(request):
 
     return render(request, 'app1/holidays.html', context)
     
+
 def addholidays(request):
     if 'uid' in request.session:
-        if request.session.has_key('uid'):
-            uid = request.session['uid']
+        uid = request.session.get('uid')
+        if uid:
+            cmp1 = company.objects.get(id=uid)
+            if request.method == 'POST':
+                name = request.POST.get('name')
+                start_date = request.POST.get('start_date')
+                end_date = request.POST.get('end_date')
+                # Create a new Holiday instance
+                hdays = holidays(name=name, start_date=start_date, end_date=end_date, cid=cmp1)
+                
+                # Check if the date already exists in the Holiday model
+                if holidays.objects.filter(start_date=start_date).exists() or holidays.objects.filter(end_date=end_date).exists():
+                    return HttpResponse('<script>alert("This date is already marked as a holiday.");window.history.back();</script>')
+                try:
+                    hdays.save()  # Save the holiday
+                    return HttpResponse( '<script>alert("Holiday marked successfully! ");window.history.back();</script>')
+                except IntegrityError as e:
+                    return HttpResponse("An error occurred while adding the holiday.")
+            else:
+                # Handle GET request for rendering form
+                return render(request, 'app1/holiday_add.html', {'cmp1': cmp1})
         else:
             return redirect('/')
-        cmp1 = company.objects.get(id=request.session['uid'])
-        if request.method == 'POST':
-            name = request.POST.get('name')
-            start_date=request.POST.get('start_date')
-            end_date=request.POST.get('end_date')
-          
-            hdays = holidays(name=name,start_date=start_date,end_date=end_date,cid=cmp1)
-            hdays.save()
-        return redirect('holidayss')
-        return render(request,'app1/holiday_add.html',{'cmp1': cmp1})
-    return redirect('/')
+    else:
+        return redirect('/')
     
 def generate_pdf(request,year, month):
     month_numeric = datetime.strptime(month, "%B").month
@@ -48946,7 +48960,7 @@ def add_cash_adjust(request):
     
 #Reshna
 @login_required(login_url='regcomp')
-def holiday_addpage(request,holiday_id):
+def holiday_addpage(request):
     if 'uid' in request.session:
         if request.session.has_key('uid'):
             uid = request.session['uid']
@@ -48957,21 +48971,7 @@ def holiday_addpage(request,holiday_id):
                     'cmp1': cmp1,
         }
         return render(request,'app1/holiday_add.html',context)
-        # if request.method == 'POST':
-        #     holiday = holidays.objects.get(hid=holiday_id)
-        #     start_date = request.POST.get('start_date')
-        #     end_date = request.POST.get('end_date')
-
-        #     # Check if the date already exists in the Holiday model
-        #     if holidays.objects.filter(start_date=start_date).exists() or holidays.objects.filter(end_date=end_date).exists():
-        #         return HttpResponse("This date is already marked as a holiday.")
-        #     try:
-        #         holidays.objects.create(start_date=start_date, end_date=end_date)
-        #         return HttpResponse("Holiday marked successfully!")
-        #     except IntegrityError as e:
-        #         return HttpResponse("An error occurred while adding the holiday.")
-        # else:
-        #     return render(request, 'app1/holiday_add.html', context)
+     
     return redirect('addholidays')
     
 def view_holidays(request, year, month):
@@ -51738,3 +51738,75 @@ def purchaseOrderDetailsToEmail(request):
                 return redirect('purchase_order_details')
                 
 #End
+
+
+
+def shareholidaysToEmail(request,year,month):
+    if request.method == 'POST':
+        cmp1 = company.objects.get(id=request.session["uid"])
+        holiday_data = holidays.objects.filter(
+            start_date__year=year,
+            start_date__month=month_numeric,
+            cid=cmp1
+    )
+
+        total_holidays = 0
+        total_working_days = 0
+
+        for holiday in holiday_data:
+            start_date = holiday.start_date
+            end_date = holiday.end_date
+
+            
+            date_range = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+
+            total_holidays += len(date_range)
+
+        _, last_day = monthrange(int(year), month_numeric)
+        all_days = [date(int(year), month_numeric, day) for day in range(1, last_day + 1)]
+        total_working_days = len(all_days) - total_holidays
+        template_path = 'app1/pdf_holidays.html'
+
+        context = {
+            'year': year,
+            'month': month,
+            'holiday_data': holiday_data,
+            'cmp1': cmp1,
+            'total_holidays': total_holidays,
+            'total_working_days': total_working_days,
+        }
+        email_message = request.POST['email_message']
+        my_subject = "holidays "
+        emails_string = request.POST['email_ids']
+        emails_list = [email.strip() for email in emails_string.split(',')]
+        # recipient_email = request.POST.get('email_ids')
+        html_message = render_to_string('app1\pdf_holidays.html',context)#add ur html
+        # vyaparapp\templates\index.html
+        # vyaparapp\templates\company\gstr3B_pdf.html
+        plain_message = strip_tags(html_message)
+        pdf_content = BytesIO()
+        pisa_document = pisa.CreatePDF(html_message.encode("UTF-8"), pdf_content) 
+        pdf_content.seek(0)
+        # todo: need to update the from_email
+        filename = f'holiday for { month } { year }.pdf'
+        message = EmailMultiAlternatives(
+            subject=my_subject,
+            body= f"Hi,\nPlease find the attached Holiday Report -  \n{email_message}\n--\nRegards,\n{cmp1.cname}\n{cmp1.caddress}\n{cmp1.state} -\n{cmp1.phone}",
+            from_email='altostechnologies6@gmail.com',
+            to= emails_list ,  # Use the recipient_email variable here
+            )
+        message.attach(filename, pdf_content.read(), 'application/pdf')
+        
+        try:
+            message.send()
+            messages.success(request, 'Report has been shared via email successfully..!')
+            return redirect('holidayss')
+        except Exception as e:
+            # Handle the exception, log the error, or provide an error message
+            messages.error(request, f'Error while sending report: {e}')
+            return redirect('holidayss')
+    return HttpResponse('<script>alert("Invalid Request!");window.location="/"</script>') 
+   
+
+
+

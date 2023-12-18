@@ -32,7 +32,7 @@
                       <h4 class="mb-0">Holiday Details</h4>
                 </div>
                 <hr/>
-                <form method="post" action="{% url 'addholidays'%}" autocomplete="off">
+                <form method="post" action="{% url 'addholidays' %}" autocomplete="off">
                     {% csrf_token %}
                     <div class="row mt-2 mb-2">
                         <div class="col-md-6">
