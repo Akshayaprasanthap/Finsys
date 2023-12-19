@@ -47582,10 +47582,12 @@ def addholidays(request):
                 
                 # Check if the date already exists in the Holiday model
                 if holidays.objects.filter(start_date=start_date).exists() or holidays.objects.filter(end_date=end_date).exists():
-                    return HttpResponse('<script>alert("This date is already marked as a holiday.");window.history.back();</script>')
+                    messages.error(request, 'This date is already marked as a holiday....!')
+                    return redirect('addholidays')
                 try:
                     hdays.save()  # Save the holiday
-                    return HttpResponse( '<script>alert("Holiday marked successfully! ");window.history.back();</script>')
+                    messages.success(request, 'Holiday marked successfully...!')
+                    return redirect('holidayss')
                 except IntegrityError as e:
                     return HttpResponse("An error occurred while adding the holiday.")
             else:
@@ -47684,7 +47686,7 @@ def attendancepagee(request):
                 }
 
            
-            if entry.status == 'Absent':
+            if entry.status == 'Leave':
                 employee_attendance[key]['absent_days'] += 1
 
            
@@ -47714,6 +47716,7 @@ def attendancepagee(request):
         return render(request, 'app1/attendance.html', context)
 
     return redirect('/')
+
     
     
 @login_required(login_url='regcomp')
@@ -47774,7 +47777,7 @@ def attendance_view(request, year, month, employee):
     }
 
     for entry in attendance_data:
-        if entry.status == 'Absent':
+        if entry.status == 'Leave':
             employee_attendance['absent_days'] += 1
 
     # Calculate total holidays for the selected month and year using the holidays table
@@ -47831,7 +47834,7 @@ def pdf_attendance(request, year, month, employee):
     }
 
     for entry in attendance_data:
-        if entry.status == 'Absent':
+        if entry.status == 'Leave':
             employee_attendance['absent_days'] += 1
 
     # Calculate total holidays for the selected month and year using the holidays table
@@ -51743,6 +51746,7 @@ def purchaseOrderDetailsToEmail(request):
 
 def shareholidaysToEmail(request,year,month):
     if request.method == 'POST':
+        month_numeric = datetime.strptime(month, "%B").month
         cmp1 = company.objects.get(id=request.session["uid"])
         holiday_data = holidays.objects.filter(
             start_date__year=year,
@@ -51808,5 +51812,100 @@ def shareholidaysToEmail(request,year,month):
     return HttpResponse('<script>alert("Invalid Request!");window.location="/"</script>') 
    
 
+def sort_employeename_attendance(request):
+    cmp1 = company.objects.get(id=request.session["uid"])
+    em = attendance.objects.filter(cid=cmp1)
+    employees = employee.objects.filter(id__in=attendance.values('employeeid')).order_by('name')
+    return render(request, 'app1/attendance.html', {'employee_attendance': employees, 'cmp1': cmp1})
 
+
+
+
+def shareattendanceToEmail(request,year,month,employee):
+    if request.method == 'POST':
+        month_numeric = datetime.strptime(month, "%B").month
+        cmp1 = company.objects.get(id=request.session['uid'])
+
+        attendance_data = attendance.objects.filter(
+            cid=cmp1,
+            date__year=year,
+            date__month=month_numeric,
+            employee=employee.replace("_", " ")
+        )
+
+        employee_attendance = {
+            'employee_name': employee.replace("_", " "),
+            'year': year,
+            'month': month,
+            'working_days': 0,
+            'holidays': 0,
+            'absent_days': 0,
+        }
+
+        for entry in attendance_data:
+            if entry.status == 'Leave':
+                employee_attendance['absent_days'] += 1
+
+        # Calculate total holidays for the selected month and year using the holidays table
+        holidays_data = holidays.objects.filter(
+            cid=cmp1,
+            start_date__year=year,
+            start_date__month=month_numeric
+        )
+        total_holidays = 0
+        for holiday in holidays_data:
+            start_date = holiday.start_date
+            end_date = holiday.end_date
+            date_range = [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+            total_holidays += len(date_range)
+
+        # Calculate total working days for the selected month and year
+        _, last_day = monthrange(int(year), month_numeric)
+        all_days = [date(int(year), month_numeric, day) for day in range(1, last_day + 1)]
+        total_working_days = len(all_days) - total_holidays - employee_attendance['absent_days']
+
+        employee_attendance['holidays'] = total_holidays
+        employee_attendance['working_days'] = total_working_days
+        template_path = 'app1/pdf_attendance.html'
+        context = {
+            'cmp1': cmp1,
+            'employee_attendance': employee_attendance,
+            'attendance_data':attendance_data,
+            'holidays_data':holidays_data,
+            'year': year,
+            'month': month,
+            'employee':employee
+        }
+        email_message = request.POST['email_message']
+        my_subject = "attendance "
+        emails_string = request.POST['email_ids']
+        emails_list = [email.strip() for email in emails_string.split(',')]
+        # recipient_email = request.POST.get('email_ids')
+        html_message = render_to_string('app1\pdf_attendance.html',context)#add ur html
+        # vyaparapp\templates\index.html
+        # vyaparapp\templates\company\gstr3B_pdf.html
+        plain_message = strip_tags(html_message)
+        pdf_content = BytesIO()
+        pisa_document = pisa.CreatePDF(html_message.encode("UTF-8"), pdf_content) 
+        pdf_content.seek(0)
+        # todo: need to update the from_email
+        filename = f'Attendance for { year } { month }.pdf'
+        message = EmailMultiAlternatives(
+            subject=my_subject,
+            body= f"Hi,\nPlease find the attached attendance Report -  \n{email_message}\n--\nRegards,\n{cmp1.cname}\n{cmp1.caddress} -\n{cmp1.phone}",
+            from_email='altostechnologies6@gmail.com',
+            to= emails_list ,  # Use the recipient_email variable here
+            )
+        message.attach(filename, pdf_content.read(), 'application/pdf')
+        
+        try:
+            message.send()
+            messages.success(request, 'Report has been shared via email successfully..!')
+            return redirect('attendancepagee')
+        except Exception as e:
+            # Handle the exception, log the error, or provide an error message
+            messages.error(request, f'Error while sending report: {e}')
+            return redirect('attendancepagee')
+    return HttpResponse('<script>alert("Invalid Request!");window.location="/"</script>') 
+   
 

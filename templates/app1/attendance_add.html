@@ -22,7 +22,9 @@
                 <div class="card-title">
                     <center><h3 class="mb-0">NEW ATTENDANCE</h3></center>
                 </div>
+
                 <hr/>
+                
             </div>
         </div>
         <div class="card radius-15" style="background-color: #243e54;">
@@ -30,6 +32,11 @@
                
                      <div class="card-title">
                       <h4 class="mb-0">Attendance Details</h4>
+                </div>
+                <div class="col-md-2" >
+                    <a href="{% url 'goaddpayrollemployee' %}" >
+                        <button id="myBtn" class="btn btn-outline-info fa fa-plus text-grey" style=" margin-left: 1150px; width: 70px;"> New</button>
+                    </a>
                 </div>
                 <hr/>
                 <form method="post" action="{% url 'save_attendance'%}" autocomplete="off">
@@ -52,7 +59,7 @@
                             <label for="status">Status</label>
                             <select class="form-control" id="status" name="status" required>
                                 <!-- <option value="Present">Present</option> -->
-                                <option value="Absent">Absent</option>
+                                <option value="Leave">Leave</option>
                             </select>
                         </div>
                        
