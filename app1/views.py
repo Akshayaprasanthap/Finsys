@@ -47702,10 +47702,12 @@ def attendancepagee(request):
             for holiday in holidays_data:
                 total_holidays += (holiday.end_date - holiday.start_date).days + 1
 
-            employee_attendance[key]['holidays'] = total_holidays
+                employee_attendance[key]['holidays'] = total_holidays
 
-           
-            employee_attendance[key]['working_days'] = last_day - employee_attendance[key]['holidays']
+            
+                working_days = last_day - total_holidays - employee_attendance[key]['absent_days']
+                employee_attendance[key]['working_days'] = working_days
+
 
        
         context = {
@@ -47738,7 +47740,7 @@ def save_attendance(request):
 
             return redirect('attendancepagee')
         return render(request,'app1/attendance_add.html',{'cmp1': cmp1})
-    return redirect('/') 
+    return redirect('/')
     
 def attendance_addpage(request):
     if 'uid' in request.session:
