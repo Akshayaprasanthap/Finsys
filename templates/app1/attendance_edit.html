@@ -59,6 +59,10 @@
                                 <option value="Absent" {% if attendance_record and attendance_record.status == 'Absent' %}selected{% endif %}>Absent</option>
                             </select>
                         </div>
+                        <div class="col-md-6 mt-2">
+                            <label for="reason">Reason</label>
+                            <input type="reason" name="reason" id="reason" class="custom-select-md form-control w-100" value="{% if attendance_record %}{{ attendance_record.reason }}{% endif %}">
+                        </div>
                     </div>
                    
                     <div class="row mt-3">

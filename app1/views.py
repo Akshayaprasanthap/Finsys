@@ -47732,10 +47732,11 @@ def save_attendance(request):
         if request.method == 'POST':
             date = request.POST.get('date')
             status = request.POST.get('status')
+            reason = request.POST.get('reason')
             # employeeid = request.POST.get('employeeid')
             employeeid = request.POST.get('employee_id').split(" ")[1:]
             employeeid = " ".join(employeeid)
-            new_attendance = attendance(cid=cmp1, date=date, employee=employeeid, status=status)
+            new_attendance = attendance(cid=cmp1, date=date, employee=employeeid, status=status, reason=reason)
             new_attendance.save()
 
             return redirect('attendancepagee')
@@ -47922,9 +47923,11 @@ def edit_attendance(request, attendance_id):
             if request.method == 'POST':
                 date = request.POST.get('date')
                 status = request.POST.get('status')
+                reason = request.POST.get('reason')
                 employee_id = request.POST.get('employee_id')
                 attendance_record.date = date
                 attendance_record.status = status
+                attendance_record.reason = reason
                 attendance_record.employee = employee_id
                 attendance_record.save()
 
@@ -47979,6 +47982,7 @@ def get_attendance_details(request):
             attendance_dict = {
                 'date': attendance_entry.date.strftime('%Y-%m-%d'),  # Format the date as needed
                 'status': attendance_entry.status,
+                'reason' : attendance_entry.reason,
             }
             attendance_list.append(attendance_dict)
 
@@ -51911,3 +51915,109 @@ def shareattendanceToEmail(request,year,month,employee):
     return HttpResponse('<script>alert("Invalid Request!");window.location="/"</script>') 
    
 
+
+def AddEmployeeInAttendance(request):
+    try: 
+        cmpId = company.objects.get(id=request.session["uid"]) 
+        if request.method == 'POST':
+            title = request.POST['title']
+            firstname = request.POST['firstname'].replace(' ','')
+            lastname = request.POST['lastname'].replace(' ','')
+            alias = request.POST['alias']
+            location = request.POST['location']
+            email = request.POST['email']
+           
+            mobile = request.POST['mobile']
+            employees = request.POST['employees']
+            joindate = request.POST['joindate']
+            try:
+                img1 = request.FILES['image']
+            except:
+                img1 = 'default' 
+            salarydetails = request.POST['salarydetails']
+            effectivefrom = request.POST['effectivefrom']
+            payhead = request.POST['payhead']
+            hours = request.POST['hours']
+            rate = request.POST['rate']
+            amount = request.POST['amount']
+            employeeno = request.POST['employeeno']
+            designation = request.POST['designation']
+            function = request.POST['function']
+            gender = request.POST['gender']
+            dateofbirth = request.POST['dateofbirth']
+            bloodgroup = request.POST['bloodgroup']
+            fathersmothersname = request.POST['fathersmothersname']
+            spousename = request.POST['spousename']
+            
+           
+            generalphone = request.POST['generalphone']
+            bankdetails = request.POST['bankdetails']
+            acno = request.POST['acno']
+            ifsccode = request.POST['ifsccode']
+            bankname = request.POST['bankname']
+            branchname = request.POST['branchname']
+            transactiontype = request.POST['transactiontype']
+            pannumber = request.POST['pannumber']
+            universalaccountnumber = request.POST['universalaccountnumber']
+            pfaccountnumber = request.POST['pfaccountnumber']
+            praccountnumber = request.POST['praccountnumber']
+            esinumber = request.POST['esinumber']
+            tdsapp = request.POST['tdsapp']
+            tdstype = request.POST['tdstype']
+            tds = request.POST['tds']
+            street = request.POST['street']
+            city = request.POST['city']
+            state = request.POST['state']
+            pincode = request.POST['pincode']
+            country = request.POST['country']
+            tempstreet = request.POST['tempstreet']
+            tempcity = request.POST['tempcity']
+            tempstate = request.POST['tempstate']
+            temppincode = request.POST['temppincode']
+            tempcountry = request.POST['tempcountry'] 
+            adharnumber = request.POST['adharnumber'] 
+            try:
+                file = request.FILES['file']
+            except:
+                file = '' 
+            
+            emppayroll = payrollemployee(title=title,firstname=firstname,
+                                         lastname=lastname,alias=alias,cid=cmpId,
+                                         location=location,
+                                         email=email,
+                                         mobile=mobile,employees=employees,
+                                         joindate=joindate,
+                                         salarydetails=salarydetails,effectivefrom=effectivefrom,
+                                         hours=hours,rate=rate,
+                                         amount=amount,employeeno=employeeno,
+                                         designation=designation,function=function,
+                                         gender=gender,dateofbirth=dateofbirth,
+                                         bloodgroup=bloodgroup,fathersmothersname=fathersmothersname,
+                                         spousename=spousename,
+                                         generalphone=generalphone,
+                                         bankdetails=bankdetails,acno=acno,ifsccode=ifsccode,
+                                         bankname=bankname,branchname=branchname,
+                                         transactiontype=transactiontype,pannumber=pannumber,
+                                         universalaccountnumber=universalaccountnumber,
+                                         pfaccountnumber=pfaccountnumber,praccountnumber=praccountnumber,
+                                         esinumber=esinumber,istds=tdsapp,
+                                         tdstype=tdstype,tds=tds,street=street,
+                                         city=city,state=state,
+                                         pincode=pincode,country=country,
+                                         tempstreet=tempstreet,tempcity=tempcity,
+                                         tempstate=tempstate,temppincode=temppincode,
+                                         tempcountry=tempcountry,payhead=payhead,
+                                         adharnumber=adharnumber
+                                        )
+            if img1 != 'default':
+                emppayroll.image = img1
+
+            if file !="":
+                 emppayroll.file=file
+
+            emppayroll.save()
+            print('done')
+            return redirect('attendance_addpage')
+    except:    
+        print('sorry')
+        return redirect('attendance_addpage')

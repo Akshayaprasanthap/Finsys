@@ -529,7 +529,7 @@
                 <!-- <h4 class="text-center">Attendance for {{ employee_attendance.employee_name }} - {{ employee_attendance.month }} {{ employee_attendance.year }}</h4> -->
             <h4 style="color: #000000; text-align: center;">Attendance for {{ employee_attendance.employee_name }} - {{ employee_attendance.month }} {{ employee_attendance.year }}</h4>
             <p style="color: #000000; text-align: center;">Total Holidays: {{ employee_attendance.holidays }} | Working Days: {{ employee_attendance.working_days }}|
-                Absent Days: {{ employee_attendance.absent_days }}</p>
+                Leave : {{ employee_attendance.absent_days }}</p>
         </div>
     
         <table class="table table-hover table-bordered">
@@ -537,6 +537,8 @@
                 <tr>
                     <th class="text-center" style="color:#000">Date</th>
                     <th class="text-center" style="color:#000">Status</th>
+                    <th class="text-center" style="color:#000">Reason</th>
+
                 </tr>
             </thead>
             <tbody>
@@ -544,6 +546,7 @@
                 <tr>
                     <td class="text-center" style="color:#000">{{ entry.date }}</td>
                     <td class="text-center" style="color:#000">{{ entry.status }}</td>
+                    <td class="text-center" style="color:#000">{{ entry.reason }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -559,7 +562,7 @@
                 <p class="text-center">
                     Total Holidays: {{ employee_attendance.holidays }} |
                     Working Days: {{ employee_attendance.working_days }} |
-                    Absent Days: {{ employee_attendance.absent_days }}
+                    Leave : {{ employee_attendance.absent_days }}
                 </p>
            </div>
         
@@ -569,6 +572,7 @@
                       
                         <th class="text-center" >Date</th>
                         <th class="text-center" >Status</th>
+                        <th class="text-center" >Reason</th>
                         <th class="text-center" >Actions</th>
                       
                     </tr>
@@ -579,6 +583,7 @@
                         <tr>
                             <td class="text-center" >{{ entry.date }}</td>
                             <td class="text-center" >{{ entry.status }}</td>
+                            <td class="text-center" >{{ entry.reason }}</td>
                             <td class="text-center">
                                 <a href="{% url 'edit_attendance' attendance_id=entry.atid %}" class="btn btn-sm btn-info">Edit</a>
                                 <a href="{% url 'delete_attendance' attendance_id=entry.atid %}" class="btn btn-sm btn-danger">Delete</a>
