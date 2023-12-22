@@ -47580,7 +47580,7 @@ def addholidays(request):
                 # Create a new Holiday instance
                 hdays = holidays(name=name, start_date=start_date, end_date=end_date, cid=cmp1)
                 
-                # Check if the date already exists in the Holiday model
+                # Check if the date already exists in the Holiday model   ######    akshaya   ##########
                 if holidays.objects.filter(start_date=start_date).exists() or holidays.objects.filter(end_date=end_date).exists():
                     messages.error(request, 'This date is already marked as a holiday....!')
                     return redirect('addholidays')
@@ -47589,7 +47589,7 @@ def addholidays(request):
                     messages.success(request, 'Holiday marked successfully...!')
                     return redirect('holidayss')
                 except IntegrityError as e:
-                    return HttpResponse("An error occurred while adding the holiday.")
+                    return HttpResponse("An error occurred while adding the holiday.")  #end akshaya
             else:
                 # Handle GET request for rendering form
                 return render(request, 'app1/holiday_add.html', {'cmp1': cmp1})
@@ -47686,7 +47686,7 @@ def attendancepagee(request):
                 }
 
            
-            if entry.status == 'Leave':
+            if entry.status == 'Leave': 
                 employee_attendance[key]['absent_days'] += 1
 
            
@@ -47705,8 +47705,8 @@ def attendancepagee(request):
                 employee_attendance[key]['holidays'] = total_holidays
 
             
-                working_days = last_day - total_holidays - employee_attendance[key]['absent_days']
-                employee_attendance[key]['working_days'] = working_days
+                working_days = last_day - total_holidays - employee_attendance[key]['absent_days'] #akshaya
+                employee_attendance[key]['working_days'] = working_days # akshaya
 
 
        
@@ -47728,20 +47728,38 @@ def save_attendance(request):
             uid = request.session['uid']
         else:
             return redirect('/')
+        
         cmp1 = company.objects.get(id=request.session['uid'])
+        
         if request.method == 'POST':
             date = request.POST.get('date')
             status = request.POST.get('status')
             reason = request.POST.get('reason')
-            # employeeid = request.POST.get('employeeid')
             employeeid = request.POST.get('employee_id').split(" ")[1:]
             employeeid = " ".join(employeeid)
-            new_attendance = attendance(cid=cmp1, date=date, employee=employeeid, status=status, reason=reason)
-            new_attendance.save()
+            
+            # Check if the selected date is a holiday  ############################ akshaya #############################
+            is_holiday = holidays.objects.filter(cid=cmp1, start_date=date).exists()
+            
+            if is_holiday:
+                messages.warning(request, f"{date} is a company holiday. Cannot add leave on a holiday.")
+            else:
+                # Check if attendance entry already exists for the same date and employee
+                existing_attendance = attendance.objects.filter(cid=cmp1, date=date, employee=employeeid)
+                
+                if existing_attendance.exists():
+                    messages.warning(request, f"Attendance for {employeeid} on {date} already exists.")
+                else:
+                    new_attendance = attendance(cid=cmp1, date=date, employee=employeeid, status=status, reason=reason)
+                    new_attendance.save()
+                    messages.success(request, f"Attendance for {employeeid} on {date} saved successfully.")
 
-            return redirect('attendancepagee')
-        return render(request,'app1/attendance_add.html',{'cmp1': cmp1})
+            return redirect('attendancepagee')################# end akshaya  ###########################
+        
+        return render(request, 'app1/attendance_add.html', {'cmp1': cmp1})
+    
     return redirect('/')
+
     
 def attendance_addpage(request):
     if 'uid' in request.session:
@@ -47750,7 +47768,7 @@ def attendance_addpage(request):
         else:
             return redirect('/')
         cmp1 = company.objects.get(id=request.session['uid'])
-        employees = payrollemployee.objects.filter(cid=cmp1)
+        employees = payrollemployee.objects.filter(cid=cmp1,is_active=True)
         context = {
                     'cmp1': cmp1,
                     'employees':employees
@@ -51748,7 +51766,7 @@ def purchaseOrderDetailsToEmail(request):
                 
 #End
 
-
+# Akshaya##########################
 
 def shareholidaysToEmail(request,year,month):
     if request.method == 'POST':
@@ -51819,10 +51837,60 @@ def shareholidaysToEmail(request,year,month):
    
 
 def sort_employeename_attendance(request):
-    cmp1 = company.objects.get(id=request.session["uid"])
-    em = attendance.objects.filter(cid=cmp1)
-    employees = employee.objects.filter(id__in=attendance.values('employeeid')).order_by('name')
-    return render(request, 'app1/attendance.html', {'employee_attendance': employees, 'cmp1': cmp1})
+    if 'uid' in request.session:
+        if request.session.has_key('uid'):
+            uid = request.session['uid']
+        else:
+            return redirect('/')
+        
+        cmp1 = company.objects.get(id=request.session['uid'])
+
+        attendance_data = attendance.objects.filter(cid=cmp1).order_by('employee')
+
+        employee_attendance = {}
+
+        for entry in attendance_data:
+            year = entry.date.year
+            month = entry.date.month
+            key = (entry.employee, year, month)
+
+            if key not in employee_attendance:
+                employee_attendance[key] = {
+                    'employee': entry.employee,
+                    'year': year,
+                    'month': month_name[month],
+                    'working_days': 0,
+                    'holidays': 0,
+                    'absent_days': 0,
+                }
+
+            if entry.status == 'Leave':
+                employee_attendance[key]['absent_days'] += 1
+
+            _, last_day = monthrange(year, month)
+
+            holidays_data = holidays.objects.filter(
+                cid=cmp1,
+                start_date__year=year,
+                start_date__month=month
+            )
+            total_holidays = 0
+            for holiday in holidays_data:
+                total_holidays += (holiday.end_date - holiday.start_date).days + 1
+
+            employee_attendance[key]['holidays'] = total_holidays
+            working_days = last_day - total_holidays - employee_attendance[key]['absent_days']
+            employee_attendance[key]['working_days'] = working_days
+
+        context = {
+            'cmp1': cmp1,
+            'employee_attendance': list(employee_attendance.values()),
+        }
+
+        return render(request, 'app1/attendance.html', context)
+
+    return redirect('/')
+    
 
 
 
@@ -52021,3 +52089,5 @@ def AddEmployeeInAttendance(request):
     except:    
         print('sorry')
         return redirect('attendance_addpage')
+
+# end akshaya

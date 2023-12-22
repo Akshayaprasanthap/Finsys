@@ -1376,6 +1376,5 @@ urlpatterns = [
     path('shareattendanceToEmail/<int:year>/<str:month>/<str:employee>/',views.shareattendanceToEmail,name="shareattendanceToEmail"),
     path('AddEmployeeInAttendance',views.AddEmployeeInAttendance,name="AddEmployeeInAttendance"),
     
-    
-    
+    #end
 ]

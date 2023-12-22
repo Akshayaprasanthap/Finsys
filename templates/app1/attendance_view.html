@@ -456,6 +456,7 @@
                         </ul>
                         </div>
                     </nav> -->
+                    <!-- ################# akshaya    ####################### -->
                     <div class="bar pt-4 px-2">
                         <div class="right" style="margin-left: 1000px;">
 
@@ -513,6 +514,7 @@
                 </div>
             </div>
         </div>
+        <!-- end akshaya -->
     
         <div class="card card-registration card-registration-2 " style="border-radius: 15px;"  >
             <div class="card-body p-0" >
@@ -531,13 +533,13 @@
             <p style="color: #000000; text-align: center;">Total Holidays: {{ employee_attendance.holidays }} | Working Days: {{ employee_attendance.working_days }}|
                 Leave : {{ employee_attendance.absent_days }}</p>
         </div>
-    
+    <!-- reason adding akshaya -->
         <table class="table table-hover table-bordered">
             <thead>
                 <tr>
                     <th class="text-center" style="color:#000">Date</th>
                     <th class="text-center" style="color:#000">Status</th>
-                    <th class="text-center" style="color:#000">Reason</th>
+                    <th class="text-center" style="color:#000">Reason</th> 
 
                 </tr>
             </thead>
@@ -692,8 +694,9 @@
         calendar.render();
     });
 </script>
+<!-- akshaya -->
 <script>
- 
+
 
     function shareViaGmail() {
        // Collect data from the table or any other relevant information
@@ -728,9 +731,9 @@
    
    </script> 
    
-      
+   
        <script>
-           // akshaya
+         
    function shareOnWhatsApp() {
                    var url = window.location.href;
                    var text = url;
@@ -741,7 +744,7 @@
    
 
 </script>
-
+<!--end akshaya -->
 
 {% endif %}
 {% endblock %}
