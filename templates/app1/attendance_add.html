@@ -47,9 +47,9 @@
                             <label id="employeeSearch" for="date">Employee</label>
                             <div class="d-flex">
                                 <!-- <input type="text" id="employeeSearch" placeholder="Search Employee"> -->
-
-                            <select  name="employee_id" id="employee_id" class="custom-select">
-                                <option selected disabled>Select Employee</option>
+                                <select  name="employee_id" id="selected" class="form-control select2 " data-width="100%"  style="background-color: #243e54; color: white;">
+                                    <option selected disabled>Select Employee</option>
+                     
                                     {% for e in employees %}
                                     <option value="{{e.employeeid}}  {{ e.firstname }} {{ e.lastname }}"> {{ e.firstname }} {{ e.lastname }}</option>
                                     {% endfor %}
@@ -962,5 +962,61 @@
         });
         </script> -->
 
+        <script src="https://code.jquery.com/jquery-3.6.4.min.js" ></script>
+        <!-- Include Select2 -->
+       <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js" ></script>
+      
+      
+      
+      <script src="https://code.jquery.com/jquery-3.6.4.min.js" ></script>
+      
+      
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js" ></script>
+      
+      
+      
+      
+      
+       <script>
+          $('.select2').select2();
+          
+          console.log("select is 'select2'");
+      
+          $('#selected').on('change', function() {
+                      console.log('hello')
+                      
+                      select = $('#selected').val();
+                      $('#billno').val('');
+                      $.ajax({
+                      type: "GET",
+                      url: "{% url 'getvendordata' %}",
+                      data: {
+                          id: select
+                      }
+                      }).done(function(response) {
+                      var json_data = JSON.parse(response);
+                      for (key in json_data) {
+                          console.log(json_data[key]['email'])
+                          document.getElementById('email').value = json_data[key]['email'];
+                          document.getElementById('mailaddr').value = json_data[key]['street'] + '\n' + json_data[key]['city'] + '\n' + json_data[key]['state'] + '\n' + json_data[key]['pincode'] + '\n' + json_data[key]['country'];
+                          document.getElementById('plosu').value = json_data[key]['sourceofsupply'];
+                          document.getElementById('gst_type').value = json_data[key]['gsttype'];
+                          document.getElementById('gst_num').value = json_data[key]['gstin'];
+                      console.log(json_data[key]['vendorid']);
+                      
+                      reloadbill(json_data[key]['vendorid']) ;
+                      }
+                      console.log(json_data);
+                      
+                      })
+                      
+      
+                  })
+                 
+      
+      
+      </script>   
+      
 
 {% endblock %}
