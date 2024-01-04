@@ -47568,35 +47568,83 @@ def holidayss(request):
     return render(request, 'app1/holidays.html', context)
     
 
+# def addholidays(request):
+#     if 'uid' in request.session:
+#         uid = request.session.get('uid')
+#         if uid:
+#             cmp1 = company.objects.get(id=uid)
+#             if request.method == 'POST':
+#                 name = request.POST.get('name')
+#                 start_date = request.POST.get('start_date')
+#                 end_date = request.POST.get('end_date')
+#                 # Create a new Holiday instance
+#                 hdays = holidays(name=name, start_date=start_date, end_date=end_date, cid=cmp1)
+                
+#                 # Check if the date already exists in the Holiday model   ######    akshaya   ##########
+#                 if holidays.objects.filter(start_date=start_date).exists() or holidays.objects.filter(end_date=end_date).exists():
+#                     messages.error(request, 'This date is already marked as a holiday....!')
+#                     return redirect('addholidays')
+#                 try:
+#                     hdays.save()  # Save the holiday
+#                     messages.success(request, 'Holiday marked successfully...!')
+#                     return redirect('holidayss')
+#                 except IntegrityError as e:
+#                     return HttpResponse("An error occurred while adding the holiday.")  #end akshaya
+#             else:
+#                 # Handle GET request for rendering form
+#                 return render(request, 'app1/holiday_add.html', {'cmp1': cmp1})
+#         else:
+#             return redirect('/')
+#     else:
+#         return redirect('/')
+
+
+from django.core.exceptions import ObjectDoesNotExist
+
+@login_required(login_url='regcomp')
 def addholidays(request):
     if 'uid' in request.session:
         uid = request.session.get('uid')
         if uid:
-            cmp1 = company.objects.get(id=uid)
+            logged_in_company = company.objects.get(id=uid)
             if request.method == 'POST':
                 name = request.POST.get('name')
                 start_date = request.POST.get('start_date')
                 end_date = request.POST.get('end_date')
-                # Create a new Holiday instance
-                hdays = holidays(name=name, start_date=start_date, end_date=end_date, cid=cmp1)
                 
-                # Check if the date already exists in the Holiday model   ######    akshaya   ##########
-                if holidays.objects.filter(start_date=start_date).exists() or holidays.objects.filter(end_date=end_date).exists():
-                    messages.error(request, 'This date is already marked as a holiday....!')
-                    return redirect('addholidays')
+                # Check if the date already exists for the current company in the Holiday model
                 try:
-                    hdays.save()  # Save the holiday
-                    messages.success(request, 'Holiday marked successfully...!')
+                    existing_holiday = holidays.objects.get(cid=logged_in_company, start_date=start_date)
+                    messages.error(request, f"A holiday already exists with the date {start_date} for your company.")
+                    return redirect('addholidays')
+                except ObjectDoesNotExist:
+                    pass
+                
+                try:
+                    existing_holiday = holidays.objects.get(cid=logged_in_company, end_date=end_date)
+                    messages.error(request, f"A holiday already exists with the same end date {end_date} for your company.")
+                    return redirect('addholidays')
+                except ObjectDoesNotExist:
+                    pass
+                
+                # Create a new Holiday instance for the logged-in company
+                try:
+                    new_holiday = holidays(name=name, start_date=start_date, end_date=end_date, cid=logged_in_company)
+                    new_holiday.save()  # Save the holiday
+                    messages.success(request, 'Holiday added successfully.')
                     return redirect('holidayss')
                 except IntegrityError as e:
-                    return HttpResponse("An error occurred while adding the holiday.")  #end akshaya
+                    return HttpResponse("An error occurred while adding the holiday.")
             else:
                 # Handle GET request for rendering form
-                return render(request, 'app1/holiday_add.html', {'cmp1': cmp1})
+                return render(request, 'app1/holiday_add.html', {'cmp1': logged_in_company})
         else:
             return redirect('/')
     else:
         return redirect('/')
+
+
+
     
 def generate_pdf(request,year, month):
     month_numeric = datetime.strptime(month, "%B").month
@@ -51808,7 +51856,7 @@ def shareholidaysToEmail(request,year,month):
         emails_string = request.POST['email_ids']
         emails_list = [email.strip() for email in emails_string.split(',')]
         # recipient_email = request.POST.get('email_ids')
-        html_message = render_to_string('app1\pdf_holidays.html',context)#add ur html
+        html_message = render_to_string('app1/pdf_holidays.html',context)#add ur html
         # vyaparapp\templates\index.html
         # vyaparapp\templates\company\gstr3B_pdf.html
         plain_message = strip_tags(html_message)
@@ -51940,7 +51988,7 @@ def shareattendanceToEmail(request,year,month,employee):
 
         employee_attendance['holidays'] = total_holidays
         employee_attendance['working_days'] = total_working_days
-        template_path = 'app1/pdf_attendance.html'
+        template_path = 'app1\pdf_attendance.html'
         context = {
             'cmp1': cmp1,
             'employee_attendance': employee_attendance,
@@ -51955,7 +52003,7 @@ def shareattendanceToEmail(request,year,month,employee):
         emails_string = request.POST['email_ids']
         emails_list = [email.strip() for email in emails_string.split(',')]
         # recipient_email = request.POST.get('email_ids')
-        html_message = render_to_string('app1\pdf_attendance.html',context)#add ur html
+        html_message = render_to_string('app1/pdf_attendance.html',context)#add ur html
         # vyaparapp\templates\index.html
         # vyaparapp\templates\company\gstr3B_pdf.html
         plain_message = strip_tags(html_message)

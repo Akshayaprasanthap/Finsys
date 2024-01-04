@@ -2378,6 +2378,7 @@ class attendance(models.Model):
     status = models.CharField(max_length=100,null=True,blank=True,default='Present')
     reason = models.CharField(max_length=100,null=True,blank=True)
     
+
     
 class man_Journal_comment(models.Model):
     comment=models.CharField(max_length=300)
