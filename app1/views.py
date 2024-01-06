@@ -52032,6 +52032,10 @@ def shareattendanceToEmail(request,year,month,employee):
    
 
 
+
+
+
+
 def AddEmployeeInAttendance(request):
     try: 
         cmpId = company.objects.get(id=request.session["uid"]) 
@@ -52137,5 +52141,25 @@ def AddEmployeeInAttendance(request):
     except:    
         print('sorry')
         return redirect('attendance_addpage')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # end akshaya
